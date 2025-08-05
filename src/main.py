@@ -1,16 +1,32 @@
 import gradio as gr
+import os
+from dotenv import load_dotenv
 from core.interfaces import ResearchQuery
-from core.implementations import (
-    SimpleKeywordExtractor, SimpleSourceRecommender, MockSearchEngine,
-    SimpleContentAnalyzer, SimpleReportGenerator
-)
+
+# Load environment variables
+load_dotenv()
+from core.implementations import MockSearchEngine, SimpleContentAnalyzer, SimpleReportGenerator
+from core.ai_implementations import GeminiKeywordExtractor, GeminiSourceRecommender
 
 class ResearchAgentService:
-    """Main research agent service"""
+    """Main research agent service with AI integration"""
     
     def __init__(self):
-        self.keyword_extractor = SimpleKeywordExtractor()
-        self.source_recommender = SimpleSourceRecommender()
+        # Initialize with AI-powered components
+        try:
+            self.keyword_extractor = GeminiKeywordExtractor()
+            self.source_recommender = GeminiSourceRecommender()
+            self.ai_enabled = True
+        except ValueError as e:
+            print(f"  AI components failed to initialize: {e}")
+            print(" Falling back to simple implementations")
+            # Fallback to simple implementations
+            from core.implementations import SimpleKeywordExtractor, SimpleSourceRecommender
+            self.keyword_extractor = SimpleKeywordExtractor()
+            self.source_recommender = SimpleSourceRecommender()
+            self.ai_enabled = False
+        
+        # These still use simple implementations for now
         self.search_engine = MockSearchEngine()
         self.content_analyzer = SimpleContentAnalyzer()
         self.report_generator = SimpleReportGenerator()
@@ -18,10 +34,10 @@ class ResearchAgentService:
     def process_query(self, question: str) -> tuple:
         """Process research query and return results"""
         
-        # Step 1: Extract keywords
+        # Step 1: Extract keywords using AI
         keywords = self.keyword_extractor.extract_keywords(question)
         
-        # Step 2: Recommend sources
+        # Step 2: Recommend sources using AI
         sources = self.source_recommender.recommend_sources(keywords)
         
         return keywords, sources
@@ -55,8 +71,10 @@ class ResearchAgentService:
         report = self.report_generator.generate_report(query, all_results)
         
         # Format output
+        ai_status = " AI-Powered" if self.ai_enabled else " Simple Mode"
+        
         output = f"""
-# Research Report
+# Research Report ({ai_status})
 
 ## Query Summary
 - **Original Question**: {report.query.original_question}
@@ -93,15 +111,18 @@ class ResearchAgentService:
 agent = ResearchAgentService()
 
 def step1_extract_keywords(question):
-    """Step 1: Extract and show keywords"""
+    """Step 1: Extract and show keywords using AI"""
     if not question.strip():
         return "", ""
     
-    keywords, sources = agent.process_query(question)
-    keywords_str = ', '.join(keywords)
-    sources_str = ', '.join(sources)
-    
-    return keywords_str, sources_str
+    try:
+        keywords, sources = agent.process_query(question)
+        keywords_str = ', '.join(keywords)
+        sources_str = ', '.join(sources)
+        
+        return keywords_str, sources_str
+    except Exception as e:
+        return f"Error: {str(e)}", ""
 
 def step2_generate_report(question, keywords, sources):
     """Step 2: Generate final report"""
@@ -115,9 +136,12 @@ def step2_generate_report(question, keywords, sources):
         return f"Error generating report: {str(e)}"
 
 # Create Gradio interface
+ai_status_text = " AI-Powered Mode" if agent.ai_enabled else " Simple Mode (Set GEMINI_API_KEY to enable AI)"
+
 with gr.Blocks(title="EGFR Research Agent") as demo:
     gr.Markdown("# 🔬 EGFR Research Agent")
     gr.Markdown("AI-powered research agent for EGFR inhibitor nephrotoxicity studies")
+    gr.Markdown(f"**Status**: {ai_status_text}")
     
     with gr.Row():
         with gr.Column():
@@ -128,18 +152,18 @@ with gr.Blocks(title="EGFR Research Agent") as demo:
                 lines=3
             )
             
-            extract_btn = gr.Button("Extract Keywords & Sources", variant="primary")
+            extract_btn = gr.Button(" Extract Keywords & Sources", variant="primary")
             
             gr.Markdown("## Step 2: Review & Modify (Optional)")
             keywords_input = gr.Textbox(
                 label="Keywords (comma-separated)",
-                placeholder="Keywords will appear here...",
+                placeholder="AI-generated keywords will appear here...",
                 lines=2
             )
             
             sources_input = gr.Textbox(
                 label="Sources (comma-separated)", 
-                placeholder="Sources will appear here...",
+                placeholder="AI-recommended sources will appear here...",
                 lines=2
             )
             
@@ -147,7 +171,7 @@ with gr.Blocks(title="EGFR Research Agent") as demo:
         
         with gr.Column():
             gr.Markdown("## Research Report")
-            output = gr.Markdown("Your research report will appear here...")
+            output = gr.Markdown("Your AI-powered research report will appear here...")
     
     # Event handlers
     extract_btn.click(
@@ -163,4 +187,7 @@ with gr.Blocks(title="EGFR Research Agent") as demo:
     )
 
 if __name__ == "__main__":
+    # Environment variables are loaded automatically from .env file
+    # No need to set API key manually - it's loaded from .env
+    
     demo.launch(share=True)
