@@ -9,7 +9,7 @@ class SimpleKeywordExtractor(IKeywordExtractor):
     """Simple keyword extractor for testing"""
     
     def extract_keywords(self, question: str) -> List[str]:
-       
+        
         medical_keywords = [
             "osimertinib", "EGFR inhibitor", "glomerulonephritis", 
             "acute", "kidney", "nephrotoxicity", "renal"
@@ -27,3 +27,10 @@ class SimpleKeywordExtractor(IKeywordExtractor):
             found_keywords = ["EGFR inhibitor", "glomerulonephritis"]
             
         return found_keywords
+
+class SimpleSourceRecommender(ISourceRecommender):
+    """Simple source recommender for testing"""
+    
+    def recommend_sources(self, keywords: List[str]) -> List[str]:
+        
+        return ["PubMed", "Google Scholar"]
