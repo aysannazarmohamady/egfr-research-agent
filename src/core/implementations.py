@@ -100,3 +100,24 @@ class SimpleContentAnalyzer(IContentAnalyzer):
         else:
             return SearchResultType.OTHER
 
+class SimpleReportGenerator(IReportGenerator):
+    """Simple report generator for testing"""
+    
+    def generate_report(self, query: ResearchQuery, results: List[SearchResult]) -> ResearchReport:
+        relevant_papers = [r for r in results if r.relevance_score >= 0.5]
+        
+        return ResearchReport(
+            query=query,
+            total_papers_found=len(results),
+            relevant_papers=relevant_papers,
+            summary=f"Found {len(results)} papers, {len(relevant_papers)} relevant to your query about EGFR inhibitor nephrotoxicity.",
+            key_findings=[
+                "Case reports suggest acute glomerulonephritis can occur with osimertinib",
+                "Systematic reviews indicate renal monitoring is recommended"
+            ],
+            recommendations=[
+                "Monitor kidney function during EGFR inhibitor therapy",
+                "Consider nephrology consultation for high-risk patients"
+            ],
+            evidence_level="Moderate (based on case reports and reviews)"
+        )
