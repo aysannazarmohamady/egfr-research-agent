@@ -34,3 +34,37 @@ class SimpleSourceRecommender(ISourceRecommender):
     def recommend_sources(self, keywords: List[str]) -> List[str]:
         
         return ["PubMed", "Google Scholar"]
+
+class MockSearchEngine(ISearchEngine):
+    """Mock search engine for testing"""
+    
+    def search(self, keywords: List[str], source: str, limit: int = 50) -> List[SearchResult]:
+        
+        mock_results = [
+            SearchResult(
+                title=f"Osimertinib-induced acute glomerulonephritis: A case report",
+                authors=["Smith J", "Doe A"],
+                journal="Nephrology Case Reports",
+                publication_date="2024-01-15",
+                doi="10.1000/example1",
+                pmid="12345678",
+                url="https://example.com/paper1",
+                abstract="A 65-year-old patient developed acute glomerulonephritis after osimertinib treatment...",
+                result_type=SearchResultType.CASE_REPORT,
+                relevance_score=0.9
+            ),
+            SearchResult(
+                title=f"EGFR inhibitors and renal complications: systematic review",
+                authors=["Johnson B", "Wilson C"],
+                journal="Clinical Oncology",
+                publication_date="2023-12-10",
+                doi="10.1000/example2",
+                pmid="87654321",
+                url="https://example.com/paper2",
+                abstract="Systematic review of renal complications associated with EGFR inhibitor therapy...",
+                result_type=SearchResultType.SYSTEMATIC_REVIEW,
+                relevance_score=0.8
+            )
+        ]
+        
+        return mock_results[:limit]
