@@ -43,3 +43,43 @@ class ResearchReport:
     key_findings: List[str]
     recommendations: List[str]
     evidence_level: str
+
+# CORE INTERFACES
+class IKeywordExtractor(ABC):
+    """Interface for keyword extraction strategies"""
+    
+    @abstractmethod
+    def extract_keywords(self, question: str) -> List[str]:
+        pass
+
+class ISourceRecommender(ABC):
+    """Interface for source recommendation strategies"""
+    
+    @abstractmethod
+    def recommend_sources(self, keywords: List[str]) -> List[str]:
+        pass
+
+class ISearchEngine(ABC):
+    """Interface for different search engines"""
+    
+    @abstractmethod
+    def search(self, keywords: List[str], source: str, limit: int = 50) -> List[SearchResult]:
+        pass
+
+class IContentAnalyzer(ABC):
+    """Interface for content analysis strategies"""
+    
+    @abstractmethod
+    def analyze_relevance(self, result: SearchResult, query: ResearchQuery) -> float:
+        pass
+    
+    @abstractmethod
+    def classify_paper_type(self, result: SearchResult) -> SearchResultType:
+        pass
+
+class IReportGenerator(ABC):
+    """Interface for report generation strategies"""
+    
+    @abstractmethod
+    def generate_report(self, query: ResearchQuery, results: List[SearchResult]) -> ResearchReport:
+        pass
