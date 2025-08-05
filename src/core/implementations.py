@@ -68,3 +68,35 @@ class MockSearchEngine(ISearchEngine):
         ]
         
         return mock_results[:limit]
+
+class SimpleContentAnalyzer(IContentAnalyzer):
+    """Simple content analyzer for testing"""
+    
+    def analyze_relevance(self, result: SearchResult, query: ResearchQuery) -> float:
+        score = 0.0
+        title_lower = result.title.lower()
+        abstract_lower = result.abstract.lower()
+        
+        for keyword in query.keywords:
+            keyword_lower = keyword.lower()
+            if keyword_lower in title_lower:
+                score += 0.3
+            if keyword_lower in abstract_lower:
+                score += 0.2
+                
+        return min(score, 1.0)
+    
+    def classify_paper_type(self, result: SearchResult) -> SearchResultType:
+        title_lower = result.title.lower()
+        
+        if "case report" in title_lower:
+            return SearchResultType.CASE_REPORT
+        elif "systematic review" in title_lower:
+            return SearchResultType.SYSTEMATIC_REVIEW
+        elif "meta-analysis" in title_lower:
+            return SearchResultType.META_ANALYSIS
+        elif "clinical trial" in title_lower:
+            return SearchResultType.CLINICAL_STUDY
+        else:
+            return SearchResultType.OTHER
+
