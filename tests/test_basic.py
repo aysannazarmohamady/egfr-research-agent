@@ -12,3 +12,6 @@ def test_keyword_extraction():
     assert "osimertinib" in keywords
     assert "glomerulonephritis" in keywords
     print("Keyword extraction test passed!")
+
+if __name__ == "__main__":
+    test_keyword_extraction()
