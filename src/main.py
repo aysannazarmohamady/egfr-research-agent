@@ -5,8 +5,10 @@ from core.interfaces import ResearchQuery
 
 # Load environment variables
 load_dotenv()
-from core.implementations import MockSearchEngine, SimpleContentAnalyzer, SimpleReportGenerator
+from core.implementations import SimpleContentAnalyzer, SimpleReportGenerator
 from core.ai_implementations import GeminiKeywordExtractor, GeminiSourceRecommender
+from core.pubmed_search import PubMedSearchEngine
+from core.scholar_scraper import GoogleScholarScraper
 
 class ResearchAgentService:
     """Main research agent service with AI integration"""
@@ -18,16 +20,19 @@ class ResearchAgentService:
             self.source_recommender = GeminiSourceRecommender()
             self.ai_enabled = True
         except ValueError as e:
-            print(f"  AI components failed to initialize: {e}")
-            print(" Falling back to simple implementations")
+            print(f"AI components failed to initialize: {e}")
+            print("Falling back to simple implementations")
             # Fallback to simple implementations
             from core.implementations import SimpleKeywordExtractor, SimpleSourceRecommender
             self.keyword_extractor = SimpleKeywordExtractor()
             self.source_recommender = SimpleSourceRecommender()
             self.ai_enabled = False
         
-        # These still use simple implementations for now
-        self.search_engine = MockSearchEngine()
+        # Initialize search engines
+        self.search_engines = {
+            "PubMed": PubMedSearchEngine(),
+            "Google Scholar": GoogleScholarScraper()
+        }
         self.content_analyzer = SimpleContentAnalyzer()
         self.report_generator = SimpleReportGenerator()
     
@@ -59,8 +64,12 @@ class ResearchAgentService:
         # Execute search
         all_results = []
         for source in sources:
-            results = self.search_engine.search(keywords, source)
-            all_results.extend(results)
+            if source in self.search_engines:
+                print(f"Searching {source}...")
+                results = self.search_engines[source].search(keywords, source, limit=20)
+                all_results.extend(results)
+            else:
+                print(f"Search engine not available for: {source}")
         
         # Analyze results
         for result in all_results:
@@ -71,7 +80,7 @@ class ResearchAgentService:
         report = self.report_generator.generate_report(query, all_results)
         
         # Format output
-        ai_status = " AI-Powered" if self.ai_enabled else " Simple Mode"
+        ai_status = "AI-Powered" if self.ai_enabled else " Simple Mode"
         
         output = f"""
 # Research Report ({ai_status})
@@ -136,10 +145,10 @@ def step2_generate_report(question, keywords, sources):
         return f"Error generating report: {str(e)}"
 
 # Create Gradio interface
-ai_status_text = " AI-Powered Mode" if agent.ai_enabled else " Simple Mode (Set GEMINI_API_KEY to enable AI)"
+ai_status_text = "AI-Powered Mode" if agent.ai_enabled else "Simple Mode (Set GEMINI_API_KEY to enable AI)"
 
 with gr.Blocks(title="EGFR Research Agent") as demo:
-    gr.Markdown("# 🔬 EGFR Research Agent")
+    gr.Markdown("# EGFR Research Agent")
     gr.Markdown("AI-powered research agent for EGFR inhibitor nephrotoxicity studies")
     gr.Markdown(f"**Status**: {ai_status_text}")
     
@@ -152,7 +161,7 @@ with gr.Blocks(title="EGFR Research Agent") as demo:
                 lines=3
             )
             
-            extract_btn = gr.Button(" Extract Keywords & Sources", variant="primary")
+            extract_btn = gr.Button("Extract Keywords & Sources", variant="primary")
             
             gr.Markdown("## Step 2: Review & Modify (Optional)")
             keywords_input = gr.Textbox(
